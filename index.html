@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<!--
+  Dado 3D: probabilidad y Ley de los Grandes Números
+  Autor: Rodrigo Rafael De la Cruz César
+  © 2026 Rodrigo Rafael De la Cruz César. Todos los derechos reservados.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Rodrigo Rafael De la Cruz César">
+<meta name="copyright" content="© 2026 Rodrigo Rafael De la Cruz César. Todos los derechos reservados.">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dado 3D: probabilidad y Ley de los Grandes Números</title>
+<style>
+/* ---------- Tokens de color (claro / oscuro) ---------- */
+:root{
+  --bg:#eaf1fb; --card:#ffffff; --text:#0b1f3a; --muted:#53657f; --line:#cfdcee;
+  --accent:#0b5fff; --accent-text:#ffffff; --theory:#e8590c; --stage:#dbe8fb;
+  --hero1:#06214d; --hero2:#0b5fff; --glow:#22d3ee;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#07101f; --card:#0f1c33; --text:#e9f1ff; --muted:#8ea5c7; --line:#1f3357;
+    --accent:#4d8dff; --accent-text:#04122b; --theory:#fb923c; --stage:#0a1730;
+    --hero1:#030b1c; --hero2:#0b3b99; --glow:#22d3ee; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#07101f; --card:#0f1c33; --text:#e9f1ff; --muted:#8ea5c7; --line:#1f3357;
+  --accent:#4d8dff; --accent-text:#04122b; --theory:#fb923c; --stage:#0a1730;
+  --hero1:#030b1c; --hero2:#0b3b99; --glow:#22d3ee; color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1120px;margin:0 auto;padding:20px 16px 32px}
+h1{font-size:clamp(1.4rem,3.2vw,2rem);margin:0 0 4px;letter-spacing:-.01em}
+.sub{margin:0 0 18px;color:var(--muted);max-width:70ch}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:14px;padding:14px;box-shadow:0 8px 24px rgba(11,95,255,.10)}
+
+/* ---------- Cabecera con logo ---------- */
+.hero{position:relative;overflow:hidden;display:flex;flex-wrap:wrap;align-items:center;gap:18px;margin-bottom:18px;padding:20px 22px;border-radius:18px;color:#fff;background:linear-gradient(120deg,var(--hero1),var(--hero2))}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;pointer-events:none}
+.hero::before{width:260px;height:260px;right:-60px;top:-110px;background:radial-gradient(circle,rgba(34,211,238,.55),transparent 70%)}
+.hero::after{width:180px;height:180px;right:140px;bottom:-110px;background:radial-gradient(circle,rgba(255,255,255,.25),transparent 70%)}
+.hero>*{position:relative;z-index:1}
+.hero h1{color:#fff;margin:0 0 4px}
+.hero .sub{margin:0;color:rgba(255,255,255,.85)}
+.brand{background:#fff;border-radius:12px;padding:8px 14px;line-height:0;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.brand img,.brand svg{display:block;height:40px;width:auto}
+.foot{max-width:1120px;margin:0 auto;padding:0 16px 28px;text-align:center;font-size:.85rem;color:var(--muted)}
+.hero .author{margin:8px 0 0;font-size:.85rem;font-weight:600;color:rgba(255,255,255,.8)}
+.card h2{font-size:1rem;margin:0 0 10px}
+
+/* ---------- Escenario 3D ---------- */
+#stage{position:relative;height:340px;border-radius:10px;background:radial-gradient(ellipse at 50% 78%,rgba(34,211,238,.30),transparent 62%),var(--stage);overflow:hidden}
+#stage canvas{display:block;width:100%;height:100%}
+#badge{position:absolute;left:12px;top:10px;font-size:.9rem;color:var(--muted)}
+#badge b{display:inline-block;font-size:2.6rem;line-height:1;color:var(--accent);margin-left:8px;vertical-align:middle}
+#badge b.pop{animation:pop .45s ease-out}
+@keyframes pop{0%{transform:scale(.4)}60%{transform:scale(1.4)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#badge b.pop{animation:none}}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);
+  background:var(--card);color:var(--text);padding:9px 14px;min-height:40px}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:linear-gradient(135deg,var(--hero2),var(--glow));color:#fff;border-color:transparent;font-weight:700;font-size:1.05rem;flex:1 1 140px;box-shadow:0 6px 16px rgba(11,95,255,.35)}
+button.primary:hover:not(:disabled){filter:brightness(1.1)}
+.hint{margin:10px 0 0;font-size:.85rem;color:var(--muted)}
+
+/* ---------- Estadísticas ---------- */
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.kpi span{display:block;font-size:.78rem;color:var(--muted)}
+.kpi b{font-size:1.35rem;font-variant-numeric:tabular-nums;color:var(--accent)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600}
+.chip{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+canvas.chart{display:block;width:100%;height:220px;margin-top:6px}
+.stack{display:grid;gap:16px}
+.note{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+.recent{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;align-items:center}
+.recent .empty{color:var(--muted);font-size:.9rem}
+.die-chip{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-weight:700;color:#fff}
+.tips{margin:0;padding-left:18px;color:var(--muted);font-size:.92rem}
+.tips li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <!-- LOGO: recreación en SVG. Para usar el logo oficial, reemplaza este <svg> por <img src="data:image/png;base64,..." alt="Tecsup"> -->
+    <div class="brand">
+      <svg viewBox="0 0 168 44" role="img" aria-label="Logo Tecsup">
+        <rect x="0" y="4" width="36" height="36" rx="9" fill="#0b5fff"/>
+        <path d="M9 14h18v5h-6.5v14h-5V19H9z" fill="#fff"/>
+        <rect x="24" y="26" width="6" height="7" rx="1.5" fill="#22d3ee"/>
+        <text x="44" y="32" font-family="system-ui,Arial,sans-serif" font-size="24" font-weight="800" letter-spacing="1" fill="#06214d">TECSUP</text>
+      </svg>
+    </div>
+    <div>
+      <h1>Dado 3D: probabilidad en acción</h1>
+      <p class="sub">Lanza el dado y observa cómo las frecuencias experimentales se acercan a la probabilidad teórica de 1/6 (16,67 %) a medida que aumentan los lanzamientos.</p>
+      <p class="author">Autor: Rodrigo Rafael De la Cruz César</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Columna izquierda: dado, controles, historial y ayuda -->
+    <div class="stack">
+    <section class="card">
+      <div id="stage"><div id="badge">Último resultado<b id="last">–</b></div></div>
+      <div class="btns">
+        <button class="primary" id="b1">Lanzar</button>
+        <button id="b10">×10</button>
+        <button id="b100">×100</button>
+        <button id="b1000">×1000</button>
+        <button id="reset">Reiniciar</button>
+      </div>
+      <p class="hint">Atajo: barra espaciadora para lanzar una vez. Los lanzamientos en serie se calculan al instante y el dado muestra el último resultado.</p>
+    </section>
+
+    <section class="card">
+      <h2>Últimos lanzamientos</h2>
+      <div id="recent" class="recent"><span class="empty">Aún no hay lanzamientos.</span></div>
+    </section>
+
+    <section class="card">
+      <h2>Cómo leer la simulación</h2>
+      <ul class="tips">
+        <li>Cada cara tiene la misma probabilidad: 1/6 ≈ 16,67 %.</li>
+        <li>Con pocos lanzamientos las barras varían mucho; es azar normal.</li>
+        <li>Con cientos o miles, las frecuencias se acercan a 1/6: es la Ley de los Grandes Números.</li>
+        <li>La desviación máxima mide cuánto se aleja la cara más desviada de 16,67 %.</li>
+      </ul>
+    </section>
+    </div>
+
+    <!-- Columna derecha: estadísticas -->
+    <div class="stack">
+      <section class="card">
+        <h2>Estadísticas en tiempo real</h2>
+        <div class="kpis">
+          <div class="kpi"><span>Lanzamientos</span><b id="kTotal">0</b></div>
+          <div class="kpi"><span>Desviación máxima</span><b id="kDev">–</b></div>
+          <div class="kpi"><span>Probabilidad teórica</span><b>16,67 %</b></div>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Cara</th><th>Frecuencia</th><th>Experimental</th><th>Teórica</th><th>Diferencia</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="card">
+        <h2>Probabilidad experimental por cara</h2>
+        <canvas class="chart" id="bars" role="img" aria-label="Gráfico de barras de la probabilidad experimental de cada cara frente a 1/6"></canvas>
+      </section>
+      <section class="card">
+        <h2>Convergencia: la Ley de los Grandes Números</h2>
+        <canvas class="chart" id="lines" role="img" aria-label="Gráfico de líneas de la proporción de cada cara según el número de lanzamientos"></canvas>
+        <p class="note">Eje horizontal en escala logarítmica. La línea punteada marca 1/6; con más lanzamientos, las curvas se acercan a ella.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<footer class="foot">Simulación para clases de probabilidad. Tecsup.<br>© 2026 Rodrigo Rafael De la Cruz César. Todos los derechos reservados.</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* =====================================================================
+   1. CONSTANTES Y ESTADO
+   ===================================================================== */
+const P_TEO = 1 / 6;
+// Normal (en coordenadas locales del cubo) de cada cara. Caras opuestas suman 7.
+const FACE_NORMAL = {1:[0,1,0], 6:[0,-1,0], 3:[1,0,0], 4:[-1,0,0], 2:[0,0,1], 5:[0,0,-1]};
+// BoxGeometry usa el orden de materiales: +x, -x, +y, -y, +z, -z
+const MATERIAL_ORDER = [3, 4, 1, 6, 2, 5];
+const COLORS = ['#e03131','#f08c00','#2f9e44','#1c7ed6','#7048e8','#c2255c'];
+
+let counts = [0,0,0,0,0,0];   // frecuencia absoluta de cada cara
+let total  = 0;               // lanzamientos acumulados
+let hist   = [];              // historial muestreado para el gráfico de convergencia
+let recent = [];              // últimos 24 resultados (para la tira de historial)
+let busy   = false;           // bloquea botones mientras se lanza
+
+/* =====================================================================
+   2. ESCENA 3D (Three.js)
+   ===================================================================== */
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+stage.appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 50);
+camera.position.set(0, 4.4, 6.4);
+camera.lookAt(0, 0.8, 0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+const glowLight = new THREE.PointLight(0x22d3ee, 0.7, 14);   // luz cian de ambiente
+glowLight.position.set(-3, 3, 2);
+scene.add(glowLight);
+const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+sun.position.set(3, 7, 4);
+sun.castShadow = true;
+sun.shadow.camera.left = -5; sun.shadow.camera.right = 5;
+sun.shadow.camera.top = 5;   sun.shadow.camera.bottom = -5;
+scene.add(sun);
+
+// Suelo invisible que solo recibe la sombra del dado
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({opacity:0.28}));
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Anillos luminosos que delimitan la zona de lanzamiento
+[[2.1, 2.25, 0.85], [2.6, 2.66, 0.35]].forEach(([r0, r1, op]) => {
+  const ring = new THREE.Mesh(new THREE.RingGeometry(r0, r1, 64),
+    new THREE.MeshBasicMaterial({color: 0x22d3ee, transparent: true, opacity: op, side: THREE.DoubleSide}));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.01;
+  scene.add(ring);
+});
+
+// Textura de una cara: fondo marfil con los puntos (pips) del número n
+function faceTexture(n){
+  const s = 128, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d');
+  g.fillStyle = '#f7f3e8'; g.fillRect(0, 0, s, s);
+  g.strokeStyle = '#d8d2bf'; g.lineWidth = 6; g.strokeRect(3, 3, s - 6, s - 6);
+  // Posiciones en una cuadrícula 3×3 (0..8)
+  const layout = {1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,2,3,5,6,8]};
+  g.fillStyle = n === 1 ? '#c92a2a' : '#1d1d1b';
+  for (const i of layout[n]){
+    g.beginPath();
+    g.arc(28 + (i % 3) * 36, 28 + Math.floor(i / 3) * 36, n === 1 ? 17 : 11, 0, Math.PI * 2);
+    g.fill();
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.anisotropy = 4;
+  return t;
+}
+
+const SIZE = 1.4, HALF = SIZE / 2;
+const die = new THREE.Mesh(
+  new THREE.BoxGeometry(SIZE, SIZE, SIZE),
+  MATERIAL_ORDER.map(n => new THREE.MeshStandardMaterial({map: faceTexture(n), roughness: 0.4}))
+);
+die.castShadow = true;
+die.position.y = HALF;
+scene.add(die);
+
+// Ajusta el render al tamaño del contenedor
+function resize(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+
+/* =====================================================================
+   3. ANIMACIÓN DEL LANZAMIENTO
+   ===================================================================== */
+const UP = new THREE.Vector3(0, 1, 0);
+let anim = null;
+
+// Orientación final: la cara n apunta hacia arriba, con giro aleatorio sobre el eje vertical
+function targetQuat(n){
+  const q   = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(...FACE_NORMAL[n]), UP);
+  const yaw = new THREE.Quaternion().setFromAxisAngle(UP, Math.random() * Math.PI * 2);
+  return yaw.multiply(q);
+}
+
+// Coloca el dado de inmediato mostrando la cara n (usado en lanzamientos en serie)
+function snapTo(n){
+  die.quaternion.copy(targetQuat(n));
+  die.position.set(0, HALF, 0);
+}
+
+// Inicia la animación: rebotes decrecientes + giros alrededor de un eje aleatorio
+function startRoll(n, done){
+  anim = {
+    t0: performance.now(), dur: 1600, done,
+    qs: die.quaternion.clone(), qt: targetQuat(n),
+    axis: new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize(),
+    turns: 2 + Math.floor(Math.random() * 2),               // vueltas completas extra
+    p0: die.position.clone(),
+    p1: new THREE.Vector3((Math.random() - .5) * 1.6, HALF, (Math.random() - .5) * 0.8)
+  };
+}
+
+function frame(now){
+  if (anim){
+    const t = Math.min(1, (now - anim.t0) / anim.dur);
+    const e = 1 - Math.pow(1 - t, 3);                         // easeOutCubic: frena al final
+    // Rotación = interpolación hacia la orientación final + vueltas que terminan en 0 (2πk ≡ identidad)
+    const base = anim.qs.clone().slerp(anim.qt, e);
+    const spin = new THREE.Quaternion().setFromAxisAngle(anim.axis, Math.PI * 2 * anim.turns * e);
+    die.quaternion.copy(spin.multiply(base));
+    die.position.x = anim.p0.x + (anim.p1.x - anim.p0.x) * e;
+    die.position.z = anim.p0.z + (anim.p1.z - anim.p0.z) * e;
+    // Tres rebotes cuya altura decae con el tiempo
+    die.position.y = HALF + 3 * Math.abs(Math.sin(t * Math.PI * 3)) * Math.pow(1 - t, 1.6);
+    if (t >= 1){
+      die.quaternion.copy(anim.qt);                           // cara exacta al detenerse
+      die.position.y = HALF;
+      const cb = anim.done; anim = null; cb && cb();
+    }
+  }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+/* =====================================================================
+   4. LÓGICA DE PROBABILIDAD
+   ===================================================================== */
+const rand6 = () => 1 + Math.floor(Math.random() * 6);        // entero uniforme 1..6
+
+// Registra un lanzamiento y guarda puntos del historial (muestreo para no crecer sin límite)
+function record(n){
+  counts[n - 1]++; total++;
+  recent.push(n); if (recent.length > 24) recent.shift();
+  if (total <= 100 || (total <= 2000 && total % 10 === 0) || total % 100 === 0){
+    hist.push({n: total, p: counts.map(c => c / total)});
+  }
+}
+
+function rollOnce(){
+  if (busy) return;
+  const n = rand6();
+  setBusy(true);
+  document.getElementById('last').textContent = '…';
+  startRoll(n, () => { record(n); showLast(n); updateUI(); setBusy(false); });
+}
+
+// Lanzamientos en serie: se reparten en varios cuadros para ver crecer los gráficos
+function rollMany(N){
+  if (busy) return;
+  setBusy(true);
+  let left = N, last = 1;
+  const chunk = Math.ceil(N / 40);
+  (function loop(){
+    for (let i = 0; i < chunk && left > 0; i++, left--){ last = rand6(); record(last); }
+    snapTo(last); showLast(last); updateUI();
+    if (left > 0) requestAnimationFrame(loop); else setBusy(false);
+  })();
+}
+
+function reset(){
+  if (busy) return;
+  counts = [0,0,0,0,0,0]; total = 0; hist = []; recent = [];
+  document.getElementById('last').textContent = '–';
+  updateUI();
+}
+
+/* =====================================================================
+   5. INTERFAZ: TABLA, KPIs Y GRÁFICOS
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const pct = x => (x * 100).toFixed(2).replace('.', ',') + ' %';
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const showLast = n => {                                       // muestra el resultado con una animación de “pop”
+  const el = $('last');
+  el.textContent = n;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+};
+
+function setBusy(b){
+  busy = b;
+  document.querySelectorAll('.btns button').forEach(el => el.disabled = b);
+}
+
+// Construye las 6 filas de la tabla una sola vez
+const rows = $('rows');
+for (let i = 0; i < 6; i++){
+  rows.insertAdjacentHTML('beforeend',
+    `<tr><td><span class="chip" style="background:${COLORS[i]}"></span>${i + 1}</td>
+     <td id="f${i}">0</td><td id="e${i}">–</td><td>16,67 %</td><td id="d${i}">–</td></tr>`);
+}
+
+// Prepara un canvas con soporte para pantallas de alta densidad
+function prep(c){
+  const d = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  if (c.width !== Math.round(w * d) || c.height !== Math.round(h * d)){ c.width = w * d; c.height = h * d; }
+  const g = c.getContext('2d');
+  g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, w, h);
+  g.font = '12px system-ui, sans-serif';
+  return {g, w, h};
+}
+
+// Gráfico de barras: probabilidad experimental frente a la línea teórica
+function drawBars(){
+  const {g, w, h} = prep($('bars'));
+  const L = 40, R = 10, T = 16, B = 24, pw = w - L - R, ph = h - T - B;
+  const p = counts.map(c => total ? c / total : 0);
+  const ymax = Math.max(0.25, Math.min(1, Math.ceil((Math.max(...p) + 0.03) * 20) / 20));
+  const Y = v => T + ph * (1 - v / ymax);
+  g.strokeStyle = css('--line'); g.fillStyle = css('--muted'); g.lineWidth = 1;
+  g.textAlign = 'right';
+  for (let k = 0; k <= 4; k++){                               // rejilla y etiquetas del eje Y
+    const v = ymax * k / 4, y = Y(v);
+    g.beginPath(); g.moveTo(L, y); g.lineTo(w - R, y); g.stroke();
+    g.fillText(Math.round(v * 100) + '%', L - 6, y + 4);
+  }
+  const bw = pw / 6;
+  g.textAlign = 'center';
+  for (let i = 0; i < 6; i++){
+    const x = L + i * bw + bw * 0.15, ww = bw * 0.7;
+    g.fillStyle = COLORS[i]; g.fillRect(x, Y(p[i]), ww, Y(0) - Y(p[i]));
+    g.fillStyle = css('--muted'); g.fillText(String(i + 1), x + ww / 2, h - 7);
+    if (total){ g.fillStyle = css('--text'); g.fillText((p[i] * 100).toFixed(1).replace('.', ',') + '%', x + ww / 2, Y(p[i]) - 4); }
+  }
+  g.strokeStyle = css('--theory'); g.lineWidth = 2; g.setLineDash([6, 5]);   // línea teórica 1/6
+  g.beginPath(); g.moveTo(L, Y(P_TEO)); g.lineTo(w - R, Y(P_TEO)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = css('--theory'); g.textAlign = 'right';
+  g.fillText('1/6 teórico', w - R - 2, Y(P_TEO) - 5);
+}
+
+// Gráfico de líneas: proporción de cada cara según el nº de lanzamientos (eje X logarítmico)
+function drawLines(){
+  const {g, w, h} = prep($('lines'));
+  const L = 40, R = 10, T = 12, B = 26, pw = w - L - R, ph = h - T - B, YMAX = 0.5;
+  const xmaxN = Math.max(10, total), lx = v => Math.log10(v) / Math.log10(xmaxN);
+  const X = n => L + pw * lx(n), Y = v => T + ph * (1 - Math.min(v, YMAX) / YMAX);
+  g.strokeStyle = css('--line'); g.fillStyle = css('--muted'); g.lineWidth = 1; g.textAlign = 'right';
+  for (let k = 0; k <= 5; k++){
+    const v = YMAX * k / 5, y = Y(v);
+    g.beginPath(); g.moveTo(L, y); g.lineTo(w - R, y); g.stroke();
+    g.fillText(Math.round(v * 100) + '%', L - 6, y + 4);
+  }
+  g.textAlign = 'center';
+  for (let n = 1; n <= xmaxN; n *= 10) g.fillText(n.toLocaleString('es'), X(n), h - 8);
+  if (total){
+    const pts = hist.slice();
+    if (!pts.length || pts[pts.length - 1].n !== total) pts.push({n: total, p: counts.map(c => c / total)});
+    for (let i = 0; i < 6; i++){
+      g.strokeStyle = COLORS[i]; g.lineWidth = 1.8; g.beginPath();
+      pts.forEach((pt, j) => j ? g.lineTo(X(pt.n), Y(pt.p[i])) : g.moveTo(X(pt.n), Y(pt.p[i])));
+      g.stroke();
+    }
+  } else {
+    g.fillStyle = css('--muted'); g.fillText('Lanza el dado para ver la convergencia', L + pw / 2, T + ph / 2);
+  }
+  g.strokeStyle = css('--theory'); g.lineWidth = 2; g.setLineDash([6, 5]);
+  g.beginPath(); g.moveTo(L, Y(P_TEO)); g.lineTo(w - R, Y(P_TEO)); g.stroke(); g.setLineDash([]);
+}
+
+// Actualiza tabla, KPIs y ambos gráficos
+function updateUI(){
+  $('recent').innerHTML = recent.length
+    ? recent.map(n => `<span class="die-chip" style="background:${COLORS[n - 1]}">${n}</span>`).join('')
+    : '<span class="empty">Aún no hay lanzamientos.</span>';
+  $('kTotal').textContent = total.toLocaleString('es');
+  let maxDev = 0;
+  for (let i = 0; i < 6; i++){
+    const p = total ? counts[i] / total : 0, d = p - P_TEO;
+    maxDev = Math.max(maxDev, Math.abs(d));
+    $('f' + i).textContent = counts[i].toLocaleString('es');
+    $('e' + i).textContent = total ? pct(p) : '–';
+    $('d' + i).textContent = total ? (d >= 0 ? '+' : '−') + (Math.abs(d) * 100).toFixed(2).replace('.', ',') + ' pp' : '–';
+  }
+  $('kDev').textContent = total ? (maxDev * 100).toFixed(2).replace('.', ',') + ' pp' : '–';
+  drawBars(); drawLines();
+}
+
+/* =====================================================================
+   6. EVENTOS E INICIO
+   ===================================================================== */
+$('b1').onclick = rollOnce;
+$('b10').onclick = () => rollMany(10);
+$('b100').onclick = () => rollMany(100);
+$('b1000').onclick = () => rollMany(1000);
+$('reset').onclick = reset;
+addEventListener('keydown', e => { if (e.code === 'Space'){ e.preventDefault(); rollOnce(); } });
+addEventListener('resize', updateUI);
+
+snapTo(1); resize(); updateUI();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
